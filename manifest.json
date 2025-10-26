@@ -13,7 +13,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["dictionary.js", "content.js"],
+      "js": ["override.js", "dictionary.js", "content.js"],
       "run_at": "document_idle"
     }
   ]
