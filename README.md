@@ -4,7 +4,21 @@
 
 Invisible Autocorrect is a Chrome extension that brings seamless, phone-like autocorrect to your browser. Unlike traditional spell checkers that underline errors and require manual correction, this extension instantly and invisibly fixes thousands of common typing mistakes as soon as you press the spacebar.
 
-The correction engine uses an AI model to intelligently predict intended words from typos, leveraging a comprehensive analysis of the English language.
+The correction engine is a frequency-dictionary/rule-based lookup (built on
+[SymSpell](https://github.com/wolfgarbe/SymSpell) word-frequency data) — no
+trained model, which keeps it fast and fully offline, at the cost of being
+non-contextual (it can't tell "there" from "their" from surrounding words).
+
+## Project evolution
+
+This was Phase 1 of a 4-part exploration into automatic typing correction,
+documented across 4 repos. It's fast and simple, but purely a lookup table
+with no understanding of context. That limitation motivated the next
+phase: [Ghost-Type-Corrector](https://github.com/JampaniKomal/Ghost-Type-Corrector),
+which replaced this dictionary with a trained neural network — followed by
+[Type-Correcter-Ai](https://github.com/JampaniKomal/Type-Correcter-Ai) and,
+finally, [AI_Corrector_Project](https://github.com/JampaniKomal/AI_Corrector_Project),
+a full cross-application desktop corrector.
 
 ## Getting Started
 
@@ -51,8 +65,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Acknowledgements
 
-- Developed with assistance from Google's Gemini.
-- The AI model leverages word frequency data from the [SymSpell project](https://github.com/wolfgarbe/SymSpell).
+- Leverages word frequency data from the [SymSpell project](https://github.com/wolfgarbe/SymSpell).
 
 # Note on Dictionary Coverage
 
