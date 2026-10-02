@@ -22,22 +22,32 @@ function handleKeyUp(event) {
     if (activeElement.tagName.toLowerCase() !== 'textarea' && activeElement.type !== 'text' && activeElement.type !== 'search' && !activeElement.isContentEditable) {
         return;
     }
-    const text = activeElement.value || activeElement.textContent;
-    const words = text.trim().split(/\s+/);
-    if (words.length < 1) {
+    const isValueField = typeof activeElement.value === 'string';
+    const raw = isValueField ? activeElement.value : activeElement.textContent;
+    // The space just typed is at the end of the field; grab the word that sits
+    // immediately before that trailing whitespace.
+    const match = raw.match(/(\S+)(\s+)$/);
+    if (!match) {
         return;
     }
-    const wordToCheck = words[words.length - 1];
-    // Skip autocorrect if word is valid
-    if (typeof validWords !== 'undefined' && validWords.has(wordToCheck.toLowerCase())) {
+    const wordToCheck = match[1];
+    const lower = wordToCheck.toLowerCase();
+    // Skip autocorrect if the word is already valid.
+    if (typeof validWords !== 'undefined' && validWords.has(lower)) {
         return;
     }
-    if (correctionMap[wordToCheck.toLowerCase()]) {
-        const correctedWord = matchCase(wordToCheck, correctionMap[wordToCheck.toLowerCase()]);
-        words[words.length - 1] = correctedWord;
-        const newText = words.join(' ') + ' ';
-        if (activeElement.value !== undefined) {
+    if (correctionMap[lower]) {
+        const correctedWord = matchCase(wordToCheck, correctionMap[lower]);
+        // Replace ONLY the last word, keeping everything before it (including
+        // newlines and multiple spaces) and the exact trailing whitespace.
+        // Rewriting the whole field would otherwise collapse all whitespace.
+        const wordStart = raw.length - match[0].length;
+        const newText = raw.slice(0, wordStart) + correctedWord + match[2];
+        if (isValueField) {
             activeElement.value = newText;
+            try {
+                activeElement.selectionStart = activeElement.selectionEnd = newText.length;
+            } catch (e) { /* some input types disallow selection */ }
         } else {
             activeElement.textContent = newText;
             moveCursorToEnd(activeElement);
@@ -47,7 +57,6 @@ function handleKeyUp(event) {
             element: activeElement,
             originalWord: wordToCheck,
             correctedWord: correctedWord,
-            position: words.length - 1,
             timestamp: Date.now()
         };
     }
@@ -103,29 +112,30 @@ document.body.addEventListener('keydown', function(event) {
     if (event.key === 'Backspace' && lastAutocorrect.element) {
         const activeElement = document.activeElement;
         if (activeElement === lastAutocorrect.element) {
-            // Get current text
-            const text = activeElement.value || activeElement.textContent;
-            const words = text.trim().split(/\s+/);
-            // Check if last word matches correctedWord
-            if (words.length > 0 && words[words.length - 1] === lastAutocorrect.correctedWord) {
-                // Undo autocorrect
-                words[words.length - 1] = lastAutocorrect.originalWord;
-                const newText = words.join(' ') + ' ';
-                if (activeElement.value !== undefined) {
+            const isValueField = typeof activeElement.value === 'string';
+            const raw = isValueField ? activeElement.value : activeElement.textContent;
+            const match = raw.match(/(\S+)(\s+)$/);
+            // Only undo if the last word is still the word we just corrected.
+            if (match && match[1] === lastAutocorrect.correctedWord) {
+                const wordStart = raw.length - match[0].length;
+                const newText = raw.slice(0, wordStart) + lastAutocorrect.originalWord + match[2];
+                if (isValueField) {
                     activeElement.value = newText;
+                    try {
+                        activeElement.selectionStart = activeElement.selectionEnd = newText.length;
+                    } catch (e) { /* some input types disallow selection */ }
                 } else {
                     activeElement.textContent = newText;
                     moveCursorToEnd(activeElement);
                 }
-                // Clear lastAutocorrect so it only works once
+                // Clear lastAutocorrect so undo only fires once.
                 lastAutocorrect = {
                     element: null,
                     originalWord: null,
                     correctedWord: null,
-                    position: null,
                     timestamp: null
                 };
-                // Prevent default backspace
+                // Prevent the Backspace from also deleting a character.
                 event.preventDefault();
             }
         }
