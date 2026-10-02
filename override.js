@@ -1,7 +1,13 @@
 // This file contains an expanded map of over 4,500 common English misspellings to their correct versions.
 // This data is sourced from various open-source spelling and autocorrection projects.
-
-const correctionMap = {
+//
+// These curated overrides are MERGED into the generated correctionMap from
+// dictionary.js (which must load first), overwriting any auto-generated entry
+// for the same misspelling. Using Object.assign rather than a second
+// `const correctionMap` is essential: content scripts in one manifest entry
+// share a scope, so re-declaring the const throws "already been declared" and
+// silently drops the entire dictionary.
+Object.assign(correctionMap, {
     "abandonned": "abandoned",
     "aberation": "aberration",
     "abilities": "abilities",
@@ -4345,5 +4351,5 @@ const correctionMap = {
     "ytou": "you",
     "yuo": "you",
     "zeebra": "zebra"
-};
+});
 
