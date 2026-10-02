@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A Chrome extension can't be driven headlessly here, so CI checks what it can:
+# every script parses, and the content-script data files load in one shared
+# scope without a const-redeclaration collision (the bug that used to drop the
+# whole dictionary). dictionary.js / validWords.js are Git LFS objects, so the
+# checkout must fetch them.
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Syntax-check scripts
+        run: |
+          node --check content.js
+          node --check override.js
+      - name: Smoke test (shared-scope load + manifest)
+        run: node tests/smoke.js

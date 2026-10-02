@@ -47,8 +47,9 @@ The extension is now installed and active! Test it by typing a common misspellin
 
 ## Features
 - Seamless, phone-like autocorrect in your browser
-- AI-powered typo correction using a frequency dictionary
+- Dictionary-based typo correction (a lookup table, not a trained model — fast and fully offline)
 - Manual overrides for rare misspellings via `override.js`
+- Preserves your existing text and whitespace — only the last word is rewritten
 - **Undo autocorrect:** If a word is autocorrected, pressing backspace immediately restores the original word—just like on a phone
 
 ## Manual Overrides
@@ -57,8 +58,30 @@ The autocorrect engine also supports a large set of manual corrections via `over
 
 ## Output Files
 
-- `dictionary.js`: The main autocorrect correction map, including both AI-generated and manual overrides.
-- `validWords.js`: A JavaScript Set containing all valid words used for autocorrect whitelisting and validation.
+- `dictionary.js`: The main autocorrect correction map (generated from the frequency dictionary). The curated `override.js` map is merged on top of it at runtime.
+- `validWords.js`: A JavaScript Set of valid words used to skip autocorrect on words that are already correct.
+
+## Recent fixes
+
+A review pass found and fixed three real bugs:
+
+- **The main dictionary never actually loaded.** Both `dictionary.js` and
+  `override.js` declared a top-level `const correctionMap`. Chrome runs the
+  scripts of one content-script entry in a single shared scope, so the second
+  declaration threw *"Identifier 'correctionMap' has already been declared"* and
+  the ~500k-entry generated dictionary was silently dropped (only the ~4,500
+  curated overrides survived, and the 12 MB file was still downloaded on every
+  page). `override.js` now **merges** into the map with `Object.assign`, and the
+  manifest loads `dictionary.js` first.
+- **`validWords.js` was never loaded** (it was missing from the manifest), so the
+  "skip words that are already correct" check was dead. It is now listed.
+- **Corrections flattened the whole field.** The old code rewrote the entire input
+  on each correction, collapsing newlines and repeated spaces. It now replaces
+  only the last word and leaves the rest of the text untouched.
+
+A dependency-free smoke test (`tests/smoke.js`, run in CI) loads the data files
+the way Chrome does and asserts the merged map is populated, guarding against the
+redeclaration bug returning.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
